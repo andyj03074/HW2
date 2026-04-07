@@ -41,3 +41,28 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/dog-breed-api:${{ github.sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/dog-breed-api:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/dog-breed-api:buildcache,mode=max
+
+  deploy:
+    name: Deploy to Local Server
+    needs: docker
+    if: github.event_name != 'pull_request'
+    # Self-hosted 플래그를 통해 사용자의 컴퓨터로 작업이 할당됩니다.
+    runs-on: self-hosted
+    
+    steps:
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+        
+      - name: Pull Docker image
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/dog-breed-api:latest
+        
+      - name: Stop and remove existing container
+        # 오류가 나도 워크플로우가 멈추지 않도록 || true 를 붙여줍니다 (처음 실행 시 컨테이너가 없기 때문)
+        run: docker rm -f dog-breed-api || true
+          
+      - name: Run new container
+        run: docker run -d --name dog-breed-api -p 8000:8000 --restart unless-stopped ${{ secrets.DOCKERHUB_USERNAME }}/dog-breed-api:latest
+          
+      - name: Clean up unused Docker images
+        # 공간 부족을 방지하기 위해 사용하지 않는 (이전 버전의) 이미지(dangling)들을 지웁니다.
+        run: docker image prune -f
