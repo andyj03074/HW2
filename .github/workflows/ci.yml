@@ -35,6 +35,8 @@ jobs:
         with:
           # 만약 dog_breed_api 자체가 레포지토리 루트가 아니라면 context를 ./dog_breed_api 로 변경해야 합니다.
           context: .
+          # Mac(Apple Silicon)에서 Pull 받을 수 있도록 arm64 아키텍처를 같이 빌드합니다.
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/dog-breed-api:latest
