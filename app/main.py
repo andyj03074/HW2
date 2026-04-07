@@ -41,9 +41,22 @@ async def predict_dog_breed(file: UploadFile = File(...)):
         
     inference_time = round((time.time() - start_time) * 1000, 2)
     
+    # 강아지 여부 판단
+    if not prediction.get("is_dog_class", False):
+        return {
+            "is_success": False,
+            "filename": file.filename,
+            "message": "이 사진은 강아지가 아닌 것 같습니다! 다시 시도해주세요.",
+            "detected_object": prediction["label"],
+            "confidence": f"{prediction['confidence']}%",
+            "processing_time_ms": inference_time
+        }
+    
     return {
+        "is_success": True,
         "filename": file.filename,
-        "prediction": prediction,
+        "message": f"이 강아지는 {prediction['label']} 품종입니다!",
+        "confidence": f"{prediction['confidence']}%",
         "processing_time_ms": inference_time
     }
 
